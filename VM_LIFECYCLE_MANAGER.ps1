@@ -10,7 +10,6 @@
 # This version supports parallel processing of decommissioning tasks using
 # PowerShell Jobs (DecomWorker.ps1) for improved performance.
 #
-# Author: Marcelo Cano
 # Date: February 2026
 # Version: 6.2 
 # =============================================================================
