@@ -1,17 +1,29 @@
 <Configuration>
   <Infrastructure>
     <VmmServers>
-      <Server>VMM-PROD-01.YOURDOMAIN.LOCAL</Server>
-      <Server>VMM-PROD-02.YOURDOMAIN.LOCAL</Server>
+      <Server>vmm-prod-01.corp.contoso.local</Server>
+      <Server>vmm-prod-02.corp.contoso.local</Server>
     </VmmServers>
     
-    <DomainController>DC01.YOURDOMAIN.LOCAL</DomainController>
-    <SccmSiteCode>XYZ</SccmSiteCode>
-    <SccmProvider>SCCM-SRV.YOURDOMAIN.LOCAL</SccmProvider>
-    <DnsZone>YOURDOMAIN.LOCAL</DnsZone>
+    <DomainController>DC-PRIMARY-01.corp.contoso.local</DomainController>
+    <SccmSiteCode>PRD</SccmSiteCode>
+    <SccmProvider>sccm-prov-01.corp.contoso.local</SccmProvider>
+    <DnsZone>corp.contoso.local</DnsZone>
+    <TargetOU>OU=Workstations,DC=corp,DC=contoso,DC=local</TargetOU>
     
-    <TargetOU>OU=DECOMMISSION,DC=YOURDOMAIN,DC=LOCAL</TargetOU>
-    
-    <CitrixController>CTX-DDC-01.YOURDOMAIN.LOCAL</CitrixController>
+    <CitrixController>ctx-ddc-01.corp.contoso.local</CitrixController>
   </Infrastructure>
+
+  <Security>
+    <AllowedADGroup>GG-IT-Admins</AllowedADGroup>
+    <AuditLogPath>C:\Logs\AppAudit.log</AuditLogPath>
+    
+    <EmailSettings>
+      <SmtpServer>smtp.contoso.com</SmtpServer>
+      <SmtpPort>587</SmtpPort>
+      <SenderEmail>no-reply@contoso.com</SenderEmail>
+      <RecipientEmails>it-alerts@contoso.com,ops-team@contoso.com</RecipientEmails>
+      <EnableSsl>true</EnableSsl>
+      </EmailSettings>
+  </Security>
 </Configuration>
