@@ -1,29 +1,41 @@
-# VM Lifecycle Manager (VLM) - Enterprise Edition
+**VM Lifecycle Manager** is a robust GUI tool designed to automate the decommissioning of physical and virtual servers. Centralize the cleanup of AD, DNS, SCCM, Citrix, and SCVMM into a single, professional dashboard.
 
-A robust PowerShell-based GUI tool for automated server decommissioning. 
-This utility manages the end-of-life process for virtual and physical servers by coordinating actions across Active Directory, VMM, SCCM, and DNS.
+## ⚡ Key Features
 
-## Key Features
+* **🖥️ Modern GUI:** Intuitive graphical interface for real-time monitoring and control.
+* **🔍 Auto-Discovery:** Automatically identifies machine status across Active Directory and VMM.
+* **📦 Batch Operations:**
+    * Stop System: Graceful OS shutdown.
+    * Logical Clean: Automated cleanup of AD, DNS, SCCM, and Citrix records.
+    * Delete VM: Permanent removal from the Hypervisor via SCVMM.
+* **🛡️ Enterprise Security:** RBAC integration (AD Group) and secure credential handling.
+* **📈 Smart Logging:** Full audit trail of actions with automated SMTP email reporting.
+* **🚀 Parallel Processing:** Leverages PowerShell Jobs to run simultaneous tasks.
 
-- **Batch Processing:** Support for multiple hostnames via comma-separated input.
-- **Environment Discovery:** Automatic identification of VM placement across multiple VMM servers.
-- **Safety Barriers:** - Ping-check verification before logical cleanup.
-  - "Safety Word" confirmation for destructive hypervisor actions.
-  - Physical hardware protection (prevents disk deletion on physical nodes).
-- **XML-Driven:** No sensitive data hardcoded in the script; infrastructure is managed via external configuration.
-- **Audit Ready:** Integrated logging with Task/Ticket number prefixes for traceability.
+## 🛠️ Infrastructure Requirements
 
-## Prerequisites
+| Component | Requirement |
+| :--- | :--- |
+| **OS** | Windows Client/Server (PowerShell 5.1+) |
+| **Modules** | ActiveDirectory, VirtualMachineManager, Citrix SDK |
+| **Connectivity** | Access to DCs, SCVMM, SCCM Provider & Citrix Controllers |
+| **Permissions** | Least Privilege access for Decommissioning tasks |
 
-- **Modules:** `ActiveDirectory`, `VirtualMachineManager`, `ConfigurationManager`.
-- **Permissions:** Account must have delegated rights to delete objects in AD, SCCM, and the Hypervisor.
-- **Connectivity:** Line of sight to Domain Controllers, VMM Servers, and SCCM Providers.
+## 🚀 Setup & Execution
 
-Configure Infrastructure:
-Locate DecomConfig_Example.xml in the root folder.
-Rename it to DecomConfig.xml.
-Update the XML with your specific VMM hosts, Domain Controllers, and Target OUs.
+### 1. Configuration
+Create a DecomConfig.xml file in the project root. Use the provided template, but never commit real production data to the repository.
 
-Run the tool:
-Execute DecomManager_v6.1.ps1 in a PowerShell terminal or ISE.
-The tool will attempt to auto-load DecomConfig.xml on startup.
+### 2. Execution
+Open the PowerShell console as Administrator and run:
+.\VM_LIFECYCLE_MANAGER.ps1
+
+### 3. Workflow
+* Login: Authenticate with an account belonging to the allowed AD group.
+* Discover: Enter hostnames (comma-separated) and click AUTO-DISCOVER.
+* Action: Select the desired operation (STOP, CLEAN, or DELETE) based on the returned status.
+
+## 📂 Project Structure
+* VM_LIFECYCLE_MANAGER.ps1: Main script (GUI Interface & Control Logic).
+* DecomWorker.ps1: Processing engine that executes background jobs.
+* DecomConfig.xml: Configuration file (Template included).
