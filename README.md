@@ -1,4 +1,4 @@
-# VM Lifecycle Manager (SLM) - Enterprise Edition
+# VM Lifecycle Manager (VLM) - Enterprise Edition
 
 A robust PowerShell-based GUI tool for automated server decommissioning. 
 This utility manages the end-of-life process for virtual and physical servers by coordinating actions across Active Directory, VMM, SCCM, and DNS.
