@@ -1,0 +1,17 @@
+<Configuration>
+  <Infrastructure>
+    <VmmServers>
+      <Server>VMM-PROD-01.YOURDOMAIN.LOCAL</Server>
+      <Server>VMM-PROD-02.YOURDOMAIN.LOCAL</Server>
+    </VmmServers>
+    
+    <DomainController>DC01.YOURDOMAIN.LOCAL</DomainController>
+    <SccmSiteCode>XYZ</SccmSiteCode>
+    <SccmProvider>SCCM-SRV.YOURDOMAIN.LOCAL</SccmProvider>
+    <DnsZone>YOURDOMAIN.LOCAL</DnsZone>
+    
+    <TargetOU>OU=DECOMMISSION,DC=YOURDOMAIN,DC=LOCAL</TargetOU>
+    
+    <CitrixController>CTX-DDC-01.YOURDOMAIN.LOCAL</CitrixController>
+  </Infrastructure>
+</Configuration>
