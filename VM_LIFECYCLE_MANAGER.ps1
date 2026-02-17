@@ -76,7 +76,20 @@ Add-Type -AssemblyName Microsoft.VisualBasic # Used for InputBox
 
 # Import core PowerShell modules required for infrastructure management.
 # These modules are needed in the main GUI script for discovery phases.
-Import-Module ActiveDirectory, VirtualMachineManager -ErrorAction SilentlyContinue
+# --- ROBUST ACTIVEDIRECTORY MODULE LOADING ---
+try {
+    # Attempt to import ActiveDirectory module with ErrorAction Stop for explicit failure.
+    Import-Module ActiveDirectory -ErrorAction Stop
+    $Script:ActiveDirectoryModuleLoaded = $true
+    Log-Msg "ActiveDirectory module loaded successfully." "Green"
+} catch {
+    Log-Msg "ERROR: Failed to load ActiveDirectory module: $($_.Exception.Message). Authentication and AD-dependent features will be disabled." "Red"
+    [System.Windows.Forms.MessageBox]::Show("The ActiveDirectory module could not be loaded. Authentication and AD-dependent functionality will be disabled. Please verify module installation and permissions.", "Critical Module Error", 0, 16)
+    Audit-Log -Action "Module Load" -Target "ActiveDirectory" -Outcome "Failure" -Details "Failed to load ActiveDirectory module: $($_.Exception.Message)" -User "(System)"
+    # $Script:ActiveDirectoryModuleLoaded remains $false
+}
+# Import VirtualMachineManager separately as its failure is less critical for initial GUI load
+Import-Module VirtualMachineManager -ErrorAction SilentlyContinue
 
 # Citrix Modules/Snapins - Depending on XenApp/XenDesktop version, one or more may be needed.
 # This section attempts to load Citrix PowerShell components, primarily for discovery.
@@ -115,6 +128,7 @@ if (-not $citrixSnapinsLoaded) {
 $Script:RunCreds = $null               # Stores user credentials for authenticated operations
 $Script:VmmTargetHost = @{}             # Maps target VM names to their VMM servers during discovery
 $Script:IsPhysical = $false             # Flag to indicate if the target is physical hardware
+$Script:ActiveDirectoryModuleLoaded = $false # Flag to track ActiveDirectory module load status
 
 # Infrastructure Variables (Script Scope for dynamic updates from DecomConfig.xml)
 # These are populated from the configuration file and used by various cleanup functions.
@@ -171,7 +185,7 @@ $form.MaximizeBox = $true                                          # Show maximi
 $mainPanel = New-Object System.Windows.Forms.Panel
 $mainPanel.Dock = "Fill"                                           # Fills the entire form
 $mainPanel.AutoScroll = $true                                      # Enables auto-scrolling
-$mainPanel.AutoScrollMinSize = New-Object System.Drawing.Size(900, 1015) # Minimum scrollable area
+$mainPanel.AutoScrollMinSize = New-Object System.Drawing.Size(900, 1110) # Minimum scrollable area
 $form.Controls.Add($mainPanel)                                     # Add panel to the form
 
 # --- UI HELPER FUNCTIONS ---
@@ -264,6 +278,7 @@ $btnLoadConfig.Font = $FontText
 # Login Button: Prompts the user for credentials to be used for various operations.
 $btnLogin = New-StyledButton -Text "LOGIN CREDENTIALS" -Color $Theme.AccentBlue -X 640 -Y 20 -W 240 -H 35 -Parent $mainPanel -Anchor ([System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right)
 $btnLogin.Font = $FontText
+$btnLogin.Enabled = $Script:ActiveDirectoryModuleLoaded # Disable if AD module failed to load at startup
 
 # Label to display the currently logged-in user
 $lblLoggedInUser = New-Object System.Windows.Forms.Label
@@ -390,13 +405,13 @@ New-DescLabel -Text "(Delete from Hypervisor)" -X 660 -Y 105 -W 190 -Parent $grp
 # LOGS AREA - Displays real-time activity and allows saving the log.
 $lblLog = New-Object System.Windows.Forms.Label
 $lblLog.Text = "Process Activity Log:"
-$lblLog.Location = New-Object System.Drawing.Point(25, 400); $lblLog.Size = New-Object System.Drawing.Size(200, 25)
+$lblLog.Location = New-Object System.Drawing.Point(25, 570); $lblLog.Size = New-Object System.Drawing.Size(200, 25)
 $lblLog.ForeColor = $Theme.TextDim; $lblLog.Font = $FontText
 $mainPanel.Controls.Add($lblLog)
 
 # Search controls for activity log
 $txtLogSearch = New-Object System.Windows.Forms.TextBox
-$txtLogSearch.Location = New-Object System.Drawing.Point(25, 430)
+$txtLogSearch.Location = New-Object System.Drawing.Point(25, 600)
 $txtLogSearch.Size = New-Object System.Drawing.Size(750, 28)
 $txtLogSearch.Font = $FontText
 $txtLogSearch.BackColor = $Theme.BgControl
@@ -406,7 +421,7 @@ $txtLogSearch.BorderStyle = "FixedSingle"
 $txtLogSearch.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
 $mainPanel.Controls.Add($txtLogSearch)
 
-$btnLogSearch = New-StyledButton -Text "SEARCH" -Color $Theme.BgControl -X 785 -Y 428 -W 115 -H 32 -Parent $mainPanel
+$btnLogSearch = New-StyledButton -Text "SEARCH" -Color $Theme.BgControl -X 785 -Y 598 -W 115 -H 32 -Parent $mainPanel
 $btnLogSearch.FlatAppearance.BorderColor = $Theme.AccentBlue
 $btnLogSearch.FlatAppearance.BorderSize = 1
 $btnLogSearch.Font = $FontText
@@ -415,19 +430,19 @@ $mainPanel.Controls.Add($btnLogSearch)
 
 
 $rtbLog = New-Object System.Windows.Forms.RichTextBox
-$rtbLog.Location = New-Object System.Drawing.Point(25, 465); $rtbLog.Size = New-Object System.Drawing.Size(875, 380) # Adjusted Y and Height
+$rtbLog.Location = New-Object System.Drawing.Point(25, 633); $rtbLog.Size = New-Object System.Drawing.Size(875, 380) # Adjusted Y and Height
 $rtbLog.BackColor = "Black"; $rtbLog.ForeColor = $Theme.AccentGreen; $rtbLog.Font = $FontMono; $rtbLog.ReadOnly = $true; $rtbLog.BorderStyle = "None"
 $rtbLog.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
 $mainPanel.Controls.Add($rtbLog)
 
 # Button to save the contents of the activity log to a text file.
-$btnSaveLog = New-StyledButton -Text "SAVE LOG TO FILE" -Color $Theme.BgControl -X 25 -Y 900 -W 200 -H 35 -Parent $mainPanel -Anchor ([System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left)
+$btnSaveLog = New-StyledButton -Text "SAVE LOG TO FILE" -Color $Theme.BgControl -X 25 -Y 1068 -W 200 -H 35 -Parent $mainPanel -Anchor ([System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left)
 $btnSaveLog.Font = $FontText; $btnSaveLog.FlatAppearance.BorderColor = $Theme.AccentBlue; $btnSaveLog.FlatAppearance.BorderSize = 1
 
 # Label for detailed progress text
 $lblProgressText = New-Object System.Windows.Forms.Label
 $lblProgressText.Text = "Idle" # Initial text
-$lblProgressText.Location = New-Object System.Drawing.Point(25, 840)
+$lblProgressText.Location = New-Object System.Drawing.Point(25, 1018)
 $lblProgressText.Size = New-Object System.Drawing.Size(875, 20)
 $lblProgressText.ForeColor = $Theme.TextMain
 $lblProgressText.Font = $FontText
@@ -437,7 +452,7 @@ $mainPanel.Controls.Add($lblProgressText)
 
 # Progress Bar for Batch Operations
 $progressBar = New-Object System.Windows.Forms.ProgressBar
-$progressBar.Location = New-Object System.Drawing.Point(25, 865) # Adjusted Y
+$progressBar.Location = New-Object System.Drawing.Point(25, 1043) # Adjusted Y
 $progressBar.Size = New-Object System.Drawing.Size(875, 15)
 $progressBar.Style = [System.Windows.Forms.ProgressBarStyle]::Continuous
 $progressBar.Minimum = 0
@@ -805,21 +820,20 @@ $btnLogin.Add_Click({
             $userName = $Cred.UserName
             
             Log-Msg "Validating user '$userName' against AD group '$Script:AllowedADGroup'..." "Cyan"
-            Audit-Log -Action "Login Validation" -Target $Script:AllowedADGroup -Details "Validating user $userName" -Outcome "Info" -User $userName
-
-            # Check if ActiveDirectory module is loaded for Test-ADGroupMembership
-            if (-not (Get-Module -ListAvailable -Name ActiveDirectory)) {
-                Log-Msg "Error: ActiveDirectory module is not loaded. Cannot perform AD group membership check." "Red"
-                [System.Windows.Forms.MessageBox]::Show("ActiveDirectory module is not loaded. Please ensure it's installed and available for import.", "Module Error", 0, 16)
-                Audit-Log -Action "Login Validation" -Target $Script:AllowedADGroup -Details "ActiveDirectory module not loaded." -Outcome "Failure" -User $userName
-                return
-            }
-            Import-Module ActiveDirectory -ErrorAction SilentlyContinue # Ensure it's imported in this scope
-
-            if (Test-ADGroupMembership -UserName $userName -GroupName $Script:AllowedADGroup) {
-                $Script:RunCreds = $Cred # Store credentials globally for other operations
-                Log-Msg "Login successful for user '$userName'." "Lime"
-                Audit-Log -Action "Login" -Target $Script:AllowedADGroup -Details "User $userName successfully logged in." -Outcome "Success" -User $userName
+                            Audit-Log -Action "Login Validation" -Target $Script:AllowedADGroup -Details "Validating user $userName" -Outcome "Info" -User $userName
+            
+                            # Check if ActiveDirectory module was loaded successfully at startup
+                            if (-not $Script:ActiveDirectoryModuleLoaded) {
+                                Log-Msg "Login blocked: ActiveDirectory module failed to load at startup. Cannot perform AD group membership check." "Red"
+                                [System.Windows.Forms.MessageBox]::Show("Login blocked: The ActiveDirectory module was not loaded. Check the log for details and ensure the module is available.", "Login Error", 0, 16)
+                                Audit-Log -Action "Login Validation" -Target $Script:AllowedADGroup -Details "ActiveDirectory module not loaded at startup." -Outcome "Failure" -User $userName
+                                return
+                            }
+                            # Removed redundant Import-Module ActiveDirectory - it should be handled at startup.
+            
+                            if (Test-ADGroupMembership -UserName $userName -GroupName $Script:AllowedADGroup) {
+                                $Script:RunCreds = $Cred # Store credentials globally for other operations
+                                Log-Msg "Login successful for user '$userName'." "Lime"                Audit-Log -Action "Login" -Target $Script:AllowedADGroup -Details "User $userName successfully logged in." -Outcome "Success" -User $userName
                 # Enable all GUI controls
                 $txtVM.Enabled = $true
                 $txtTicket.Enabled = $true
